@@ -1,0 +1,284 @@
+﻿<UserControl x:Class="BattleShip.View.PlayerGridView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converter="clr-namespace:BattleShip.Converters"
+             xmlns:model="clr-namespace:BattleShip.Model"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <converter:ValueConverterGroup x:Key="InvertAndVisibilitate">
+            <converter:InvertBoolConverter/>
+            <converter:BoolToVisibilityConverter/>
+        </converter:ValueConverterGroup>
+
+        <converter:TypeToColorConverter x:Key="TypeToColorConverter"/>
+        <converter:BoolToColorConverter x:Key="BoolToColorConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+
+        <DataTemplate x:Key="ShipTemplate" DataType="{x:Type model:Ship}">
+            <TextBlock Visibility="{Binding Path=IsSunk, Converter={StaticResource InvertAndVisibilitate}}" Text="{Binding Path=Type}"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="CellTemplate">
+            <Border BorderThickness="1" BorderBrush="Gray">
+                <TextBlock MinHeight="15" MinWidth="15" Background="{Binding Type, Converter={StaticResource TypeToColorConverter}}"/>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="RowTemplate">
+            <ListView ItemsSource="{Binding}" HorizontalAlignment="Center" ItemTemplate="{StaticResource CellTemplate}">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="Square_Clicked" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+            </ListView>
+        </DataTemplate>
+
+        <Style x:Key="RowStyle" TargetType="ListViewItem">
+            <Setter Property="Focusable" Value="False"/>
+        </Style>
+
+        <Style x:Key="GridStyle" TargetType="ListView">
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="IsEnabled" Value="False"/>
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="1"/>
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EnemyGridStyle" TargetType="ListView" BasedOn="{StaticResource GridStyle}">
+            <Setter Property="IsEnabled" Value="{Binding Me.IsShooting}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Me.IsShooting}" Value="False">
+                    <Setter Property="Opacity" Value="0.5"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.Won}" Value="True">
+                    <Setter Property="IsEnabled" Value="False"/>
+                    <Setter Property="Opacity" Value="1"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.Lose}" Value="True">
+                    <Setter Property="IsEnabled" Value="False"/>
+                    <Setter Property="Opacity" Value="1"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding GameStarted}" Value="False">
+                    <Setter Property="IsEnabled" Value="False"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ResultLabelStyle" TargetType="Label">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="25"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="{Binding Me.Won, Converter={StaticResource BoolToColorConverter}}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Me.Won}" Value="true">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Setter Property="Content" Value="YOU WON!"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.Lose}" Value="true">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Setter Property="Content" Value="YOU LOSE!"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="PlayerLabelStyle" TargetType="Label">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="25"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="ArrowLabelStyle" TargetType="Label" BasedOn="{StaticResource PlayerLabelStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding GameStarted}" Value="false">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.IsShooting}" Value="true">
+                    <Setter Property="Content" Value="--&gt;"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.IsShooting}" Value="false">
+                    <Setter Property="Content" Value="&lt;--"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.Won}" Value="true">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.Lose}" Value="true">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ShipsInfoGridStyle" TargetType="Grid">
+            <Setter Property="IsEnabled" Value="False"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding GameStarted}" Value="false">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.Won}" Value="true">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.Lose}" Value="true">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ButtonsGridStyle" TargetType="Grid">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding GameStarted}" Value="true">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="RestartButtonStyle" TargetType="Button">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Me.Won}" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Me.Lose}" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ShipsListBoxStyle" TargetType="ListBox">
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="MinHeight" Value="103"/>
+        </Style>
+    </UserControl.Resources>
+
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+
+        <Button 
+            Grid.Row="5" 
+            Content="Play Again" 
+            Command="{Binding RestartGameCommand}"
+            Style="{StaticResource RestartButtonStyle}"/>
+
+        <Label 
+            Grid.Row="0"
+            Grid.ColumnSpan="2"
+            Style="{StaticResource ResultLabelStyle}"/>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="5*"/>
+            </Grid.ColumnDefinitions>
+
+            <Label
+                Grid.Column="0"
+                Content="YOU"
+                Style="{StaticResource PlayerLabelStyle}"/>
+
+            <Label
+                Grid.Column="1"
+                Style="{StaticResource ArrowLabelStyle}"/>
+
+            <Label
+                Grid.Column="2"
+                Content="ENEMY"
+                Style="{StaticResource PlayerLabelStyle}"/>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <ListView
+                Grid.Column="0" 
+                ItemsSource="{Binding Me.MyGrid.Squares}"
+                Style="{StaticResource GridStyle}"
+                ItemContainerStyle="{StaticResource RowStyle}"
+                ItemTemplate="{StaticResource RowTemplate}"/>
+
+
+            <ListView
+                Grid.Column="1"
+                ItemsSource="{Binding Me.EnemyGrid.Squares}"
+                Style="{StaticResource EnemyGridStyle}"
+                ItemContainerStyle="{StaticResource RowStyle}"
+                ItemTemplate="{StaticResource RowTemplate}"/>
+
+        </Grid>
+
+        <Grid Grid.Row="3" Style="{StaticResource ShipsInfoGridStyle}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Label 
+                    Content="Remaining Ships" 
+                    FontWeight="Bold"
+                    HorizontalAlignment="Center"/>
+            </Grid>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <ListBox
+                    Grid.Column="0"
+                    ItemsSource="{Binding Me.MyShips}"
+                    ItemTemplate="{StaticResource ShipTemplate}"
+                    Style="{StaticResource ShipsListBoxStyle}"/>
+
+                <ListBox
+                    Grid.Column="1"
+                    ItemsSource="{Binding Me.EnemyShips}"
+                    ItemTemplate="{StaticResource ShipTemplate}"
+                    Style="{StaticResource ShipsListBoxStyle}"/>
+
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="4" Style="{StaticResource ButtonsGridStyle}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Content="Generate Ships" Command="{Binding GenerateShipsCommand}"/>
+            <Button Grid.Column="1" Content="Start Game" IsEnabled="{Binding Me.IsPlayerReady}" Command="{Binding StartGameCommand}"/>
+        </Grid>
+    </Grid>
+</UserControl>
